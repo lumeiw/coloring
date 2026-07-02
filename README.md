@@ -72,7 +72,8 @@ flutter run -d <ios-device-or-simulator>
 
 В [`.github/workflows/build-ipa.yml`](.github/workflows/build-ipa.yml) настроена
 сборка **неподписанного** IPA на macOS-раннере (по push в `main` и вручную через
-_Run workflow_). Готовый `.ipa` доступен как артефакт запуска.
+_Run workflow_). Готовый `.ipa` публикуется в **[Releases](../../releases)** (и
+дополнительно доступен как артефакт запуска).
 
 Неподписанный IPA нельзя поставить напрямую через App Store/Xcode — он подходит для
 сторонней подписи/сайдлоада (AltStore, Sideloadly и т.п.). Чтобы собирать

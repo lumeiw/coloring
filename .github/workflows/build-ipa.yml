@@ -12,6 +12,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write # нужно для публикации релиза
+
 jobs:
   build-ipa:
     runs-on: macos-14
@@ -51,3 +54,14 @@ jobs:
           name: coloring-unsigned-ipa
           path: build/ios/iphoneos/coloring-unsigned.ipa
           if-no-files-found: error
+
+      - name: Publish IPA to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Неподписанный IPA (для сайдлоада — AltStore/Sideloadly).
+            Коммит: ${{ github.sha }}
+          files: build/ios/iphoneos/coloring-unsigned.ipa
+          fail_on_unmatched_files: true
