@@ -1,0 +1,53 @@
+name: Build unsigned IPA
+
+# Собирает НЕПОДПИСАННЫЙ IPA на macOS-раннере и выкладывает его артефактом.
+# Запускается по push в main и вручную (Run workflow).
+#
+# Чтобы собирать ПОДПИСАННЫЙ IPA: добавьте секреты с сертификатом (.p12) и
+# provisioning-профилем, импортируйте их в keychain перед сборкой и замените
+# `flutter build ios --no-codesign` на `flutter build ipa --export-options-plist=...`.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.4
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Code generation (drift / freezed / injectable)
+        run: dart run build_runner build
+
+      - name: Build unsigned .app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA
+        run: |
+          cd build/ios/iphoneos
+          mkdir -p Payload
+          mv Runner.app Payload/
+          zip -qq -r coloring-unsigned.ipa Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coloring-unsigned-ipa
+          path: build/ios/iphoneos/coloring-unsigned.ipa
+          if-no-files-found: error
