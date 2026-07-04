@@ -1,4 +1,4 @@
-package com.floya.coloring
+package com.coloring
 
 import io.flutter.embedding.android.FlutterActivity
 

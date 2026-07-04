@@ -31,6 +31,7 @@ class ColoringRepositoryImpl implements ColoringRepository {
       height: cache.height,
       labelMap: ColoringStorage.labelMapFromBytes(cache.labelMap),
       regions: ColoringStorage.decodeRegions(cache.regionsJson),
+      originalPng: cache.originalImage,
     );
   }
 

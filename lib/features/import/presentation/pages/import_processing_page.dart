@@ -7,17 +7,20 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/import_repository.dart';
 import '../../domain/pdf_source.dart';
 
-/// 1c — «Улучшаем изображение»: реально запускает CV-пайплайн по выбранной
-/// странице и по завершении открывает экран раскрашивания.
+/// «Улучшаем изображение»: запускает CV-пайплайн по выбранным страницам
+/// (одна — работа, несколько — книга) и по завершении открывает раскраску
+/// первой страницы.
 class ImportProcessingPage extends StatefulWidget {
   const ImportProcessingPage({
     super.key,
     required this.source,
-    required this.pageIndex,
+    required this.pageIndexes,
+    required this.title,
   });
 
   final ImportSource source;
-  final int pageIndex;
+  final List<int> pageIndexes;
+  final String title;
 
   @override
   State<ImportProcessingPage> createState() => _ImportProcessingPageState();
@@ -34,6 +37,15 @@ class _ImportProcessingPageState extends State<ImportProcessingPage> {
   int _activeStep = 0;
   String? _error;
 
+  /// Прогресс по страницам книги (0-based done / total). У книги первая
+  /// выбранная страница — обложка, CV по ней не считается.
+  int _pagesDone = 0;
+
+  bool get _isBook => widget.pageIndexes.length > 1;
+
+  int get _pagesTotal =>
+      _isBook ? widget.pageIndexes.length - 1 : widget.pageIndexes.length;
+
   @override
   void initState() {
     super.initState();
@@ -44,11 +56,21 @@ class _ImportProcessingPageState extends State<ImportProcessingPage> {
     // Псевдо-прогресс по шагам (реальный пайплайн атомарен в изоляте).
     _tickSteps();
     try {
-      final id = await getIt<ImportRepository>().importPage(
+      final id = await getIt<ImportRepository>().importPages(
         widget.source,
-        widget.pageIndex,
+        widget.pageIndexes,
+        title: widget.title,
+        onPage: (done, total) {
+          if (mounted) setState(() => _pagesDone = done);
+        },
       );
-      if (mounted) context.go(AppRoutes.coloringPath(id));
+      if (!mounted) return;
+      // Книга — на главную (галерею); одиночная работа — сразу в раскраску.
+      if (_isBook) {
+        context.go(AppRoutes.gallery);
+      } else {
+        context.go(AppRoutes.coloringPath(id));
+      }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     }
@@ -82,29 +104,37 @@ class _ImportProcessingPageState extends State<ImportProcessingPage> {
   }
 
   Widget _progressView() {
+    final book = _isBook;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const SizedBox(
+        SizedBox(
           width: 148,
           height: 148,
           child: CircularProgressIndicator(
             strokeWidth: 12,
+            // Для книги — реальный прогресс по страницам, иначе — крутилка.
+            value: book ? _pagesDone / _pagesTotal : null,
             backgroundColor: AppColors.surfaceContainerHigh,
-            valueColor: AlwaysStoppedAnimation(AppColors.primary),
+            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
           ),
         ),
         const SizedBox(height: 32),
-        const Text(
-          'Улучшаем изображение…',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        Text(
+          book
+              ? 'Страница ${(_pagesDone + 1).clamp(1, _pagesTotal)} из $_pagesTotal…'
+              : 'Улучшаем изображение…',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Готовим чистые контуры и области раскраски',
+        Text(
+          book
+              ? 'Готовим книгу «${widget.title}»'
+              : 'Готовим чистые контуры и области раскраски',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
+          // bodyLarge: 16 / 400.
+          style: const TextStyle(
+            fontSize: 16,
             height: 1.45,
             color: AppColors.onSurfaceVariant,
           ),

@@ -13,7 +13,9 @@ import '../domain/pdf_source.dart';
 @lazySingleton
 class PdfRasterizer {
   static const String sampleAsset = 'assets/sample/coloring_sample.pdf';
-  static const int _cvTargetWidth = 1200;
+  // В ширину рабочего размера CV-пайплайна (_maxDim=2400), иначе детали
+  // теряются ещё до обработки.
+  static const int _cvTargetWidth = 2400;
 
   Future<int> pageCount(ImportSource source) async {
     if (source is ImageFileSource) return 1; // изображение — одна «страница»

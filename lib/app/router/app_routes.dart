@@ -17,4 +17,10 @@ abstract final class AppRoutes {
   static const coloringName = 'coloring';
 
   static String coloringPath(int artworkId) => '/coloring/$artworkId';
+
+  /// Страницы книги: /book/:id
+  static const book = '/book/:id';
+  static const bookName = 'book';
+
+  static String bookPath(int bookId) => '/book/$bookId';
 }

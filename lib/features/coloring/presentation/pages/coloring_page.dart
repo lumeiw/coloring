@@ -10,8 +10,8 @@ import '../cubit/coloring_state.dart';
 import '../engine/coloring_canvas.dart';
 import '../widgets/color_picker_sheet.dart';
 
-/// 3 — Экран раскрашивания. Этап 2: рабочий движок поверх мок-документа
-/// (клиппинг мазка по маске региона, кисть-маркер, пипетка, undo/redo).
+/// Экран раскрашивания: клиппинг мазка по маске региона, кисть, пипетка,
+/// undo/redo, режим «оригинал».
 class ColoringPage extends StatelessWidget {
   const ColoringPage({super.key, required this.artworkId});
 
@@ -47,18 +47,28 @@ class _ColoringViewState extends State<_ColoringView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvasBackground,
-      body: SafeArea(
-        child: BlocBuilder<ColoringCubit, ColoringState>(
-          builder: (context, state) {
-            if (state.loading || state.document == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            // Верхняя панель — на всю ширину; холст и нижняя панель на широких
-            // экранах (iPad) держим колонкой по центру.
-            return Column(
-              children: [
-                _TopBar(resetSignal: _resetSignal),
-                Expanded(
+      body: BlocBuilder<ColoringCubit, ColoringState>(
+        builder: (context, state) {
+          if (state.loading || state.document == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          // Верхняя панель — на всю ширину; холст и нижняя панель на широких
+          // экранах (iPad) держим колонкой по центру. SafeArea живёт ВНУТРИ
+          // панелей, чтобы зоны статус-бара и home-индикатора были того же
+          // цвета, что и сами панели.
+          return Column(
+            children: [
+              Container(
+                color: AppColors.surface,
+                child: SafeArea(
+                  bottom: false,
+                  child: _TopBar(resetSignal: _resetSignal),
+                ),
+              ),
+              Expanded(
+                child: SafeArea(
+                  top: false,
+                  bottom: false,
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 720),
@@ -76,10 +86,10 @@ class _ColoringViewState extends State<_ColoringView> {
                     ),
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -185,26 +195,32 @@ class _BottomPanel extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 26),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _selectedColorRow(context, cubit, state),
-          const SizedBox(height: 14),
-          _swatchStrip(cubit, state),
-          const SizedBox(height: 12),
-          // Размер кисти (без подписи — только иконка-слайдер).
-          _slider(
-            context,
-            Icons.line_weight,
-            (state.brushSize - BrushLimits.minSize) /
-                (BrushLimits.maxSize - BrushLimits.minSize),
-            (v) => cubit.setBrushSize(
-              BrushLimits.minSize +
-                  v * (BrushLimits.maxSize - BrushLimits.minSize),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      // SafeArea внутри панели: зона home-индикатора красится цветом панели,
+      // на «безрамочных» устройствах отступ берётся из инсета (минимум 26).
+      child: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.only(bottom: 26),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _selectedColorRow(context, cubit, state),
+            const SizedBox(height: 14),
+            _swatchStrip(cubit, state),
+            const SizedBox(height: 12),
+            // Размер кисти (без подписи — только иконка-слайдер).
+            _slider(
+              context,
+              Icons.line_weight,
+              (state.brushSize - BrushLimits.minSize) /
+                  (BrushLimits.maxSize - BrushLimits.minSize),
+              (v) => cubit.setBrushSize(
+                BrushLimits.minSize +
+                    v * (BrushLimits.maxSize - BrushLimits.minSize),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -356,7 +372,8 @@ class _BottomPanel extends StatelessWidget {
         clipBehavior: Clip.none,
         padding: const EdgeInsets.symmetric(horizontal: 6),
         itemCount: AppColors.palette.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 14),
+        // Между свотчами — шаг md (12) из дизайн-системы.
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
           final color = AppColors.palette[i];
           final selected = state.color == color;

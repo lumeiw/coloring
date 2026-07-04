@@ -6,8 +6,11 @@ import '../../../../app/router/app_routes.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/domain/artwork.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/gallery_item.dart';
 import '../cubit/gallery_cubit.dart';
 import '../widgets/artwork_card.dart';
+import '../widgets/book_card.dart';
+import '../widgets/item_actions.dart';
 
 /// Экран «Мои работы» (галерея) поверх реальных данных drift.
 class GalleryPage extends StatelessWidget {
@@ -34,11 +37,17 @@ class _GalleryView extends StatefulWidget {
 class _GalleryViewState extends State<_GalleryView> {
   _Filter _filter = _Filter.all;
 
-  List<Artwork> _visible(List<Artwork> all) => switch (_filter) {
+  ArtworkStatus _statusOf(GalleryItem item) => switch (item) {
+    SingleArtworkItem(:final artwork) => artwork.status,
+    BookItem() => item.status,
+  };
+
+  List<GalleryItem> _visible(List<GalleryItem> all) => switch (_filter) {
     _Filter.all => all,
     _Filter.inProgress =>
-      all.where((a) => a.status == ArtworkStatus.inProgress).toList(),
-    _Filter.done => all.where((a) => a.status == ArtworkStatus.done).toList(),
+      all.where((i) => _statusOf(i) == ArtworkStatus.inProgress).toList(),
+    _Filter.done =>
+      all.where((i) => _statusOf(i) == ArtworkStatus.done).toList(),
   };
 
   @override
@@ -66,7 +75,7 @@ class _GalleryViewState extends State<_GalleryView> {
         icon: const Icon(Icons.add),
         label: const Text(
           'Импорт',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
         ),
       ),
     );
@@ -76,27 +85,48 @@ class _GalleryViewState extends State<_GalleryView> {
     if (state.loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (state.artworks.isEmpty) {
+    if (state.items.isEmpty) {
       return _emptyState();
     }
-    final items = _visible(state.artworks);
+    final items = _visible(state.items);
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 96),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 220,
-        mainAxisSpacing: 18,
-        crossAxisSpacing: 18,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
         childAspectRatio: 0.66,
       ),
       itemCount: items.length,
-      itemBuilder: (context, i) {
-        final art = items[i];
-        return ArtworkCard(
-          artwork: art,
-          onTap: () => context.push(AppRoutes.coloringPath(art.id)),
-        );
-      },
+      itemBuilder: (context, i) => _itemCard(items[i]),
     );
+  }
+
+  Widget _itemCard(GalleryItem item) {
+    final cubit = context.read<GalleryCubit>();
+    return switch (item) {
+      SingleArtworkItem(:final artwork) => ArtworkCard(
+        artwork: artwork,
+        onTap: () => context.push(AppRoutes.coloringPath(artwork.id)),
+        onLongPress: () => showItemActions(
+          context,
+          title: artwork.title,
+          onRename: (t) => cubit.renameArtwork(artwork.id, t),
+          onDelete: () => cubit.removeArtwork(artwork.id),
+        ),
+      ),
+      BookItem() => BookCard(
+        book: item,
+        onTap: () => context.push(AppRoutes.bookPath(item.id)),
+        onLongPress: () => showItemActions(
+          context,
+          title: item.title,
+          deleteHint: 'Будут удалены все ${item.pageCount} стр. книги.',
+          onRename: (t) => cubit.renameBook(item.id, t),
+          onDelete: () => cubit.removeBook(item.id),
+        ),
+      ),
+    };
   }
 
   Widget _emptyState() {
@@ -128,7 +158,8 @@ class _GalleryViewState extends State<_GalleryView> {
             const Text(
               'Импортируйте PDF-раскраску, чтобы начать',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15, color: AppColors.onSurfaceVariant),
+              // bodyLarge: 16 / 400.
+              style: TextStyle(fontSize: 16, color: AppColors.onSurfaceVariant),
             ),
           ],
         ),
@@ -143,7 +174,7 @@ class _GalleryViewState extends State<_GalleryView> {
         children: [
           Text(
             'Мои работы',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800),
           ),
           Spacer(),
         ],
@@ -153,7 +184,7 @@ class _GalleryViewState extends State<_GalleryView> {
 
   Widget _filters() {
     return SizedBox(
-      height: 52,
+      height: 38,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -177,7 +208,7 @@ class _GalleryViewState extends State<_GalleryView> {
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary : AppColors.surfaceContainer,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,

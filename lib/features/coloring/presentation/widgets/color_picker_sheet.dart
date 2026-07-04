@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
-/// 4 — Шит выбора цвета: цвета из легенды раскраски + общая палитра + пипетка.
+/// Шит выбора цвета: цвета из легенды раскраски + общая палитра + пипетка.
 /// Возвращает выбранный цвет через Navigator.pop.
 class ColorPickerSheet extends StatelessWidget {
   const ColorPickerSheet({super.key, this.selected});

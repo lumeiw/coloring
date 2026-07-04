@@ -3,6 +3,421 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
+class $BooksTable extends Books with TableInfo<$BooksTable, BookRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BooksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 120,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourcePdfPathMeta = const VerificationMeta(
+    'sourcePdfPath',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePdfPath = GeneratedColumn<String>(
+    'source_pdf_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coverMeta = const VerificationMeta('cover');
+  @override
+  late final GeneratedColumn<Uint8List> cover = GeneratedColumn<Uint8List>(
+    'cover',
+    aliasedName,
+    true,
+    type: DriftSqlType.blob,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    sourcePdfPath,
+    cover,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'books';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BookRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('source_pdf_path')) {
+      context.handle(
+        _sourcePdfPathMeta,
+        sourcePdfPath.isAcceptableOrUnknown(
+          data['source_pdf_path']!,
+          _sourcePdfPathMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cover')) {
+      context.handle(
+        _coverMeta,
+        cover.isAcceptableOrUnknown(data['cover']!, _coverMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BookRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BookRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      sourcePdfPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_pdf_path'],
+      ),
+      cover: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}cover'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BooksTable createAlias(String alias) {
+    return $BooksTable(attachedDatabase, alias);
+  }
+}
+
+class BookRow extends DataClass implements Insertable<BookRow> {
+  final int id;
+  final String title;
+
+  /// Путь к исходному PDF книги.
+  final String? sourcePdfPath;
+
+  /// PNG-обложка (первая выбранная страница; она НЕ обрабатывается CV и
+  /// не входит в страницы книги — только превью для карточки галереи).
+  final Uint8List? cover;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const BookRow({
+    required this.id,
+    required this.title,
+    this.sourcePdfPath,
+    this.cover,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || sourcePdfPath != null) {
+      map['source_pdf_path'] = Variable<String>(sourcePdfPath);
+    }
+    if (!nullToAbsent || cover != null) {
+      map['cover'] = Variable<Uint8List>(cover);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  BooksCompanion toCompanion(bool nullToAbsent) {
+    return BooksCompanion(
+      id: Value(id),
+      title: Value(title),
+      sourcePdfPath: sourcePdfPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePdfPath),
+      cover: cover == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cover),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory BookRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BookRow(
+      id: serializer.fromJson<int>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      sourcePdfPath: serializer.fromJson<String?>(json['sourcePdfPath']),
+      cover: serializer.fromJson<Uint8List?>(json['cover']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'title': serializer.toJson<String>(title),
+      'sourcePdfPath': serializer.toJson<String?>(sourcePdfPath),
+      'cover': serializer.toJson<Uint8List?>(cover),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  BookRow copyWith({
+    int? id,
+    String? title,
+    Value<String?> sourcePdfPath = const Value.absent(),
+    Value<Uint8List?> cover = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => BookRow(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    sourcePdfPath: sourcePdfPath.present
+        ? sourcePdfPath.value
+        : this.sourcePdfPath,
+    cover: cover.present ? cover.value : this.cover,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  BookRow copyWithCompanion(BooksCompanion data) {
+    return BookRow(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      sourcePdfPath: data.sourcePdfPath.present
+          ? data.sourcePdfPath.value
+          : this.sourcePdfPath,
+      cover: data.cover.present ? data.cover.value : this.cover,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookRow(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('sourcePdfPath: $sourcePdfPath, ')
+          ..write('cover: $cover, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    sourcePdfPath,
+    $driftBlobEquality.hash(cover),
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BookRow &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.sourcePdfPath == this.sourcePdfPath &&
+          $driftBlobEquality.equals(other.cover, this.cover) &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BooksCompanion extends UpdateCompanion<BookRow> {
+  final Value<int> id;
+  final Value<String> title;
+  final Value<String?> sourcePdfPath;
+  final Value<Uint8List?> cover;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const BooksCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.sourcePdfPath = const Value.absent(),
+    this.cover = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  BooksCompanion.insert({
+    this.id = const Value.absent(),
+    required String title,
+    this.sourcePdfPath = const Value.absent(),
+    this.cover = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : title = Value(title);
+  static Insertable<BookRow> custom({
+    Expression<int>? id,
+    Expression<String>? title,
+    Expression<String>? sourcePdfPath,
+    Expression<Uint8List>? cover,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (sourcePdfPath != null) 'source_pdf_path': sourcePdfPath,
+      if (cover != null) 'cover': cover,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  BooksCompanion copyWith({
+    Value<int>? id,
+    Value<String>? title,
+    Value<String?>? sourcePdfPath,
+    Value<Uint8List?>? cover,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return BooksCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      sourcePdfPath: sourcePdfPath ?? this.sourcePdfPath,
+      cover: cover ?? this.cover,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (sourcePdfPath.present) {
+      map['source_pdf_path'] = Variable<String>(sourcePdfPath.value);
+    }
+    if (cover.present) {
+      map['cover'] = Variable<Uint8List>(cover.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BooksCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('sourcePdfPath: $sourcePdfPath, ')
+          ..write('cover: $cover, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ArtworksTable extends Artworks
     with TableInfo<$ArtworksTable, ArtworkRow> {
   @override
@@ -34,6 +449,18 @@ class $ArtworksTable extends Artworks
     ),
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES books (id) ON DELETE CASCADE',
+    ),
   );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
@@ -119,6 +546,7 @@ class $ArtworksTable extends Artworks
   List<GeneratedColumn> get $columns => [
     id,
     title,
+    bookId,
     status,
     progress,
     thumbnail,
@@ -149,6 +577,12 @@ class $ArtworksTable extends Artworks
       );
     } else if (isInserting) {
       context.missing(_titleMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
     }
     if (data.containsKey('status')) {
       context.handle(
@@ -212,6 +646,10 @@ class $ArtworksTable extends Artworks
         DriftSqlType.string,
         data['${effectivePrefix}title'],
       )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      ),
       status: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}status'],
@@ -253,6 +691,9 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
   final int id;
   final String title;
 
+  /// Книга, к которой относится страница (null — одиночная работа).
+  final int? bookId;
+
   /// Индекс значения enum ArtworkStatus (new / inProgress / done).
   final int status;
 
@@ -272,6 +713,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
   const ArtworkRow({
     required this.id,
     required this.title,
+    this.bookId,
     required this.status,
     required this.progress,
     this.thumbnail,
@@ -285,6 +727,9 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
+    if (!nullToAbsent || bookId != null) {
+      map['book_id'] = Variable<int>(bookId);
+    }
     map['status'] = Variable<int>(status);
     map['progress'] = Variable<double>(progress);
     if (!nullToAbsent || thumbnail != null) {
@@ -303,6 +748,9 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     return ArtworksCompanion(
       id: Value(id),
       title: Value(title),
+      bookId: bookId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bookId),
       status: Value(status),
       progress: Value(progress),
       thumbnail: thumbnail == null && nullToAbsent
@@ -325,6 +773,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     return ArtworkRow(
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
+      bookId: serializer.fromJson<int?>(json['bookId']),
       status: serializer.fromJson<int>(json['status']),
       progress: serializer.fromJson<double>(json['progress']),
       thumbnail: serializer.fromJson<Uint8List?>(json['thumbnail']),
@@ -340,6 +789,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
+      'bookId': serializer.toJson<int?>(bookId),
       'status': serializer.toJson<int>(status),
       'progress': serializer.toJson<double>(progress),
       'thumbnail': serializer.toJson<Uint8List?>(thumbnail),
@@ -353,6 +803,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
   ArtworkRow copyWith({
     int? id,
     String? title,
+    Value<int?> bookId = const Value.absent(),
     int? status,
     double? progress,
     Value<Uint8List?> thumbnail = const Value.absent(),
@@ -363,6 +814,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
   }) => ArtworkRow(
     id: id ?? this.id,
     title: title ?? this.title,
+    bookId: bookId.present ? bookId.value : this.bookId,
     status: status ?? this.status,
     progress: progress ?? this.progress,
     thumbnail: thumbnail.present ? thumbnail.value : this.thumbnail,
@@ -377,6 +829,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     return ArtworkRow(
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
       status: data.status.present ? data.status.value : this.status,
       progress: data.progress.present ? data.progress.value : this.progress,
       thumbnail: data.thumbnail.present ? data.thumbnail.value : this.thumbnail,
@@ -394,6 +847,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
     return (StringBuffer('ArtworkRow(')
           ..write('id: $id, ')
           ..write('title: $title, ')
+          ..write('bookId: $bookId, ')
           ..write('status: $status, ')
           ..write('progress: $progress, ')
           ..write('thumbnail: $thumbnail, ')
@@ -409,6 +863,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
   int get hashCode => Object.hash(
     id,
     title,
+    bookId,
     status,
     progress,
     $driftBlobEquality.hash(thumbnail),
@@ -423,6 +878,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
       (other is ArtworkRow &&
           other.id == this.id &&
           other.title == this.title &&
+          other.bookId == this.bookId &&
           other.status == this.status &&
           other.progress == this.progress &&
           $driftBlobEquality.equals(other.thumbnail, this.thumbnail) &&
@@ -435,6 +891,7 @@ class ArtworkRow extends DataClass implements Insertable<ArtworkRow> {
 class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
   final Value<int> id;
   final Value<String> title;
+  final Value<int?> bookId;
   final Value<int> status;
   final Value<double> progress;
   final Value<Uint8List?> thumbnail;
@@ -445,6 +902,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
   const ArtworksCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
+    this.bookId = const Value.absent(),
     this.status = const Value.absent(),
     this.progress = const Value.absent(),
     this.thumbnail = const Value.absent(),
@@ -456,6 +914,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
   ArtworksCompanion.insert({
     this.id = const Value.absent(),
     required String title,
+    this.bookId = const Value.absent(),
     this.status = const Value.absent(),
     this.progress = const Value.absent(),
     this.thumbnail = const Value.absent(),
@@ -467,6 +926,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
   static Insertable<ArtworkRow> custom({
     Expression<int>? id,
     Expression<String>? title,
+    Expression<int>? bookId,
     Expression<int>? status,
     Expression<double>? progress,
     Expression<Uint8List>? thumbnail,
@@ -478,6 +938,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (title != null) 'title': title,
+      if (bookId != null) 'book_id': bookId,
       if (status != null) 'status': status,
       if (progress != null) 'progress': progress,
       if (thumbnail != null) 'thumbnail': thumbnail,
@@ -491,6 +952,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
   ArtworksCompanion copyWith({
     Value<int>? id,
     Value<String>? title,
+    Value<int?>? bookId,
     Value<int>? status,
     Value<double>? progress,
     Value<Uint8List?>? thumbnail,
@@ -502,6 +964,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
     return ArtworksCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
+      bookId: bookId ?? this.bookId,
       status: status ?? this.status,
       progress: progress ?? this.progress,
       thumbnail: thumbnail ?? this.thumbnail,
@@ -520,6 +983,9 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
     }
     if (title.present) {
       map['title'] = Variable<String>(title.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
     }
     if (status.present) {
       map['status'] = Variable<int>(status.value);
@@ -550,6 +1016,7 @@ class ArtworksCompanion extends UpdateCompanion<ArtworkRow> {
     return (StringBuffer('ArtworksCompanion(')
           ..write('id: $id, ')
           ..write('title: $title, ')
+          ..write('bookId: $bookId, ')
           ..write('status: $status, ')
           ..write('progress: $progress, ')
           ..write('thumbnail: $thumbnail, ')
@@ -623,6 +1090,18 @@ class $CvCacheEntriesTable extends CvCacheEntries
         type: DriftSqlType.blob,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _originalImageMeta = const VerificationMeta(
+    'originalImage',
+  );
+  @override
+  late final GeneratedColumn<Uint8List> originalImage =
+      GeneratedColumn<Uint8List>(
+        'original_image',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _regionsJsonMeta = const VerificationMeta(
     'regionsJson',
   );
@@ -653,6 +1132,7 @@ class $CvCacheEntriesTable extends CvCacheEntries
     height,
     labelMap,
     enhancedImage,
+    originalImage,
     regionsJson,
     createdAt,
   ];
@@ -709,6 +1189,15 @@ class $CvCacheEntriesTable extends CvCacheEntries
     } else if (isInserting) {
       context.missing(_enhancedImageMeta);
     }
+    if (data.containsKey('original_image')) {
+      context.handle(
+        _originalImageMeta,
+        originalImage.isAcceptableOrUnknown(
+          data['original_image']!,
+          _originalImageMeta,
+        ),
+      );
+    }
     if (data.containsKey('regions_json')) {
       context.handle(
         _regionsJsonMeta,
@@ -755,6 +1244,10 @@ class $CvCacheEntriesTable extends CvCacheEntries
         DriftSqlType.blob,
         data['${effectivePrefix}enhanced_image'],
       )!,
+      originalImage: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}original_image'],
+      ),
       regionsJson: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}regions_json'],
@@ -783,6 +1276,10 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
   /// Улучшенный line-art (display-версия) в виде PNG.
   final Uint8List enhancedImage;
 
+  /// Оригинал страницы (PNG без обработок, тот же размер, что display) —
+  /// для режима «показать оригинал» на экране рисования.
+  final Uint8List? originalImage;
+
   /// JSON-список регионов (id, площадь, bbox, центроид номера).
   final String regionsJson;
   final DateTime createdAt;
@@ -792,6 +1289,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
     required this.height,
     required this.labelMap,
     required this.enhancedImage,
+    this.originalImage,
     required this.regionsJson,
     required this.createdAt,
   });
@@ -803,6 +1301,9 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
     map['height'] = Variable<int>(height);
     map['label_map'] = Variable<Uint8List>(labelMap);
     map['enhanced_image'] = Variable<Uint8List>(enhancedImage);
+    if (!nullToAbsent || originalImage != null) {
+      map['original_image'] = Variable<Uint8List>(originalImage);
+    }
     map['regions_json'] = Variable<String>(regionsJson);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
@@ -815,6 +1316,9 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
       height: Value(height),
       labelMap: Value(labelMap),
       enhancedImage: Value(enhancedImage),
+      originalImage: originalImage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalImage),
       regionsJson: Value(regionsJson),
       createdAt: Value(createdAt),
     );
@@ -831,6 +1335,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
       height: serializer.fromJson<int>(json['height']),
       labelMap: serializer.fromJson<Uint8List>(json['labelMap']),
       enhancedImage: serializer.fromJson<Uint8List>(json['enhancedImage']),
+      originalImage: serializer.fromJson<Uint8List?>(json['originalImage']),
       regionsJson: serializer.fromJson<String>(json['regionsJson']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -844,6 +1349,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
       'height': serializer.toJson<int>(height),
       'labelMap': serializer.toJson<Uint8List>(labelMap),
       'enhancedImage': serializer.toJson<Uint8List>(enhancedImage),
+      'originalImage': serializer.toJson<Uint8List?>(originalImage),
       'regionsJson': serializer.toJson<String>(regionsJson),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -855,6 +1361,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
     int? height,
     Uint8List? labelMap,
     Uint8List? enhancedImage,
+    Value<Uint8List?> originalImage = const Value.absent(),
     String? regionsJson,
     DateTime? createdAt,
   }) => CvCacheEntry(
@@ -863,6 +1370,9 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
     height: height ?? this.height,
     labelMap: labelMap ?? this.labelMap,
     enhancedImage: enhancedImage ?? this.enhancedImage,
+    originalImage: originalImage.present
+        ? originalImage.value
+        : this.originalImage,
     regionsJson: regionsJson ?? this.regionsJson,
     createdAt: createdAt ?? this.createdAt,
   );
@@ -875,6 +1385,9 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
       enhancedImage: data.enhancedImage.present
           ? data.enhancedImage.value
           : this.enhancedImage,
+      originalImage: data.originalImage.present
+          ? data.originalImage.value
+          : this.originalImage,
       regionsJson: data.regionsJson.present
           ? data.regionsJson.value
           : this.regionsJson,
@@ -890,6 +1403,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
           ..write('height: $height, ')
           ..write('labelMap: $labelMap, ')
           ..write('enhancedImage: $enhancedImage, ')
+          ..write('originalImage: $originalImage, ')
           ..write('regionsJson: $regionsJson, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -903,6 +1417,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
     height,
     $driftBlobEquality.hash(labelMap),
     $driftBlobEquality.hash(enhancedImage),
+    $driftBlobEquality.hash(originalImage),
     regionsJson,
     createdAt,
   );
@@ -915,6 +1430,7 @@ class CvCacheEntry extends DataClass implements Insertable<CvCacheEntry> {
           other.height == this.height &&
           $driftBlobEquality.equals(other.labelMap, this.labelMap) &&
           $driftBlobEquality.equals(other.enhancedImage, this.enhancedImage) &&
+          $driftBlobEquality.equals(other.originalImage, this.originalImage) &&
           other.regionsJson == this.regionsJson &&
           other.createdAt == this.createdAt);
 }
@@ -925,6 +1441,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
   final Value<int> height;
   final Value<Uint8List> labelMap;
   final Value<Uint8List> enhancedImage;
+  final Value<Uint8List?> originalImage;
   final Value<String> regionsJson;
   final Value<DateTime> createdAt;
   const CvCacheEntriesCompanion({
@@ -933,6 +1450,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
     this.height = const Value.absent(),
     this.labelMap = const Value.absent(),
     this.enhancedImage = const Value.absent(),
+    this.originalImage = const Value.absent(),
     this.regionsJson = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -942,6 +1460,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
     required int height,
     required Uint8List labelMap,
     required Uint8List enhancedImage,
+    this.originalImage = const Value.absent(),
     required String regionsJson,
     this.createdAt = const Value.absent(),
   }) : width = Value(width),
@@ -955,6 +1474,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
     Expression<int>? height,
     Expression<Uint8List>? labelMap,
     Expression<Uint8List>? enhancedImage,
+    Expression<Uint8List>? originalImage,
     Expression<String>? regionsJson,
     Expression<DateTime>? createdAt,
   }) {
@@ -964,6 +1484,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
       if (height != null) 'height': height,
       if (labelMap != null) 'label_map': labelMap,
       if (enhancedImage != null) 'enhanced_image': enhancedImage,
+      if (originalImage != null) 'original_image': originalImage,
       if (regionsJson != null) 'regions_json': regionsJson,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -975,6 +1496,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
     Value<int>? height,
     Value<Uint8List>? labelMap,
     Value<Uint8List>? enhancedImage,
+    Value<Uint8List?>? originalImage,
     Value<String>? regionsJson,
     Value<DateTime>? createdAt,
   }) {
@@ -984,6 +1506,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
       height: height ?? this.height,
       labelMap: labelMap ?? this.labelMap,
       enhancedImage: enhancedImage ?? this.enhancedImage,
+      originalImage: originalImage ?? this.originalImage,
       regionsJson: regionsJson ?? this.regionsJson,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -1007,6 +1530,9 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
     if (enhancedImage.present) {
       map['enhanced_image'] = Variable<Uint8List>(enhancedImage.value);
     }
+    if (originalImage.present) {
+      map['original_image'] = Variable<Uint8List>(originalImage.value);
+    }
     if (regionsJson.present) {
       map['regions_json'] = Variable<String>(regionsJson.value);
     }
@@ -1024,6 +1550,7 @@ class CvCacheEntriesCompanion extends UpdateCompanion<CvCacheEntry> {
           ..write('height: $height, ')
           ..write('labelMap: $labelMap, ')
           ..write('enhancedImage: $enhancedImage, ')
+          ..write('originalImage: $originalImage, ')
           ..write('regionsJson: $regionsJson, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -1536,6 +2063,7 @@ class StrokesCompanion extends UpdateCompanion<Stroke> {
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
+  late final $BooksTable books = $BooksTable(this);
   late final $ArtworksTable artworks = $ArtworksTable(this);
   late final $CvCacheEntriesTable cvCacheEntries = $CvCacheEntriesTable(this);
   late final $StrokesTable strokes = $StrokesTable(this);
@@ -1544,12 +2072,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    books,
     artworks,
     cvCacheEntries,
     strokes,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'books',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('artworks', kind: UpdateKind.delete)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'artworks',
@@ -1567,10 +2103,316 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   ]);
 }
 
+typedef $$BooksTableCreateCompanionBuilder =
+    BooksCompanion Function({
+      Value<int> id,
+      required String title,
+      Value<String?> sourcePdfPath,
+      Value<Uint8List?> cover,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$BooksTableUpdateCompanionBuilder =
+    BooksCompanion Function({
+      Value<int> id,
+      Value<String> title,
+      Value<String?> sourcePdfPath,
+      Value<Uint8List?> cover,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$BooksTableReferences
+    extends BaseReferences<_$AppDatabase, $BooksTable, BookRow> {
+  $$BooksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$ArtworksTable, List<ArtworkRow>>
+  _artworksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.artworks,
+    aliasName: 'books__id__artworks__book_id',
+  );
+
+  $$ArtworksTableProcessedTableManager get artworksRefs {
+    final manager = $$ArtworksTableTableManager(
+      $_db,
+      $_db.artworks,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_artworksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
+  $$BooksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePdfPath => $composableBuilder(
+    column: $table.sourcePdfPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get cover => $composableBuilder(
+    column: $table.cover,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> artworksRefs(
+    Expression<bool> Function($$ArtworksTableFilterComposer f) f,
+  ) {
+    final $$ArtworksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.artworks,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ArtworksTableFilterComposer(
+            $db: $db,
+            $table: $db.artworks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BooksTableOrderingComposer
+    extends Composer<_$AppDatabase, $BooksTable> {
+  $$BooksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourcePdfPath => $composableBuilder(
+    column: $table.sourcePdfPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get cover => $composableBuilder(
+    column: $table.cover,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BooksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BooksTable> {
+  $$BooksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get sourcePdfPath => $composableBuilder(
+    column: $table.sourcePdfPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get cover =>
+      $composableBuilder(column: $table.cover, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> artworksRefs<T extends Object>(
+    Expression<T> Function($$ArtworksTableAnnotationComposer a) f,
+  ) {
+    final $$ArtworksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.artworks,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ArtworksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.artworks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BooksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BooksTable,
+          BookRow,
+          $$BooksTableFilterComposer,
+          $$BooksTableOrderingComposer,
+          $$BooksTableAnnotationComposer,
+          $$BooksTableCreateCompanionBuilder,
+          $$BooksTableUpdateCompanionBuilder,
+          (BookRow, $$BooksTableReferences),
+          BookRow,
+          PrefetchHooks Function({bool artworksRefs})
+        > {
+  $$BooksTableTableManager(_$AppDatabase db, $BooksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BooksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BooksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BooksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> sourcePdfPath = const Value.absent(),
+                Value<Uint8List?> cover = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BooksCompanion(
+                id: id,
+                title: title,
+                sourcePdfPath: sourcePdfPath,
+                cover: cover,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String title,
+                Value<String?> sourcePdfPath = const Value.absent(),
+                Value<Uint8List?> cover = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BooksCompanion.insert(
+                id: id,
+                title: title,
+                sourcePdfPath: sourcePdfPath,
+                cover: cover,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$BooksTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({artworksRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (artworksRefs) db.artworks],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (artworksRefs)
+                    await $_getPrefetchedData<BookRow, $BooksTable, ArtworkRow>(
+                      currentTable: table,
+                      referencedTable: $$BooksTableReferences
+                          ._artworksRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$BooksTableReferences(db, table, p0).artworksRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.bookId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BooksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BooksTable,
+      BookRow,
+      $$BooksTableFilterComposer,
+      $$BooksTableOrderingComposer,
+      $$BooksTableAnnotationComposer,
+      $$BooksTableCreateCompanionBuilder,
+      $$BooksTableUpdateCompanionBuilder,
+      (BookRow, $$BooksTableReferences),
+      BookRow,
+      PrefetchHooks Function({bool artworksRefs})
+    >;
 typedef $$ArtworksTableCreateCompanionBuilder =
     ArtworksCompanion Function({
       Value<int> id,
       required String title,
+      Value<int?> bookId,
       Value<int> status,
       Value<double> progress,
       Value<Uint8List?> thumbnail,
@@ -1583,6 +2425,7 @@ typedef $$ArtworksTableUpdateCompanionBuilder =
     ArtworksCompanion Function({
       Value<int> id,
       Value<String> title,
+      Value<int?> bookId,
       Value<int> status,
       Value<double> progress,
       Value<Uint8List?> thumbnail,
@@ -1595,6 +2438,23 @@ typedef $$ArtworksTableUpdateCompanionBuilder =
 final class $$ArtworksTableReferences
     extends BaseReferences<_$AppDatabase, $ArtworksTable, ArtworkRow> {
   $$ArtworksTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) =>
+      db.books.createAlias('artworks__book_id__books__id');
+
+  $$BooksTableProcessedTableManager? get bookId {
+    final $_column = $_itemColumn<int>('book_id');
+    if ($_column == null) return null;
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$CvCacheEntriesTable, List<CvCacheEntry>>
   _cvCacheEntriesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
@@ -1687,6 +2547,29 @@ class $$ArtworksTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> cvCacheEntriesRefs(
     Expression<bool> Function($$CvCacheEntriesTableFilterComposer f) f,
@@ -1792,6 +2675,29 @@ class $$ArtworksTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$ArtworksTableAnnotationComposer
@@ -1831,6 +2737,29 @@ class $$ArtworksTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<T> cvCacheEntriesRefs<T extends Object>(
     Expression<T> Function($$CvCacheEntriesTableAnnotationComposer a) f,
@@ -1896,7 +2825,11 @@ class $$ArtworksTableTableManager
           $$ArtworksTableUpdateCompanionBuilder,
           (ArtworkRow, $$ArtworksTableReferences),
           ArtworkRow,
-          PrefetchHooks Function({bool cvCacheEntriesRefs, bool strokesRefs})
+          PrefetchHooks Function({
+            bool bookId,
+            bool cvCacheEntriesRefs,
+            bool strokesRefs,
+          })
         > {
   $$ArtworksTableTableManager(_$AppDatabase db, $ArtworksTable table)
     : super(
@@ -1913,6 +2846,7 @@ class $$ArtworksTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
+                Value<int?> bookId = const Value.absent(),
                 Value<int> status = const Value.absent(),
                 Value<double> progress = const Value.absent(),
                 Value<Uint8List?> thumbnail = const Value.absent(),
@@ -1923,6 +2857,7 @@ class $$ArtworksTableTableManager
               }) => ArtworksCompanion(
                 id: id,
                 title: title,
+                bookId: bookId,
                 status: status,
                 progress: progress,
                 thumbnail: thumbnail,
@@ -1935,6 +2870,7 @@ class $$ArtworksTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String title,
+                Value<int?> bookId = const Value.absent(),
                 Value<int> status = const Value.absent(),
                 Value<double> progress = const Value.absent(),
                 Value<Uint8List?> thumbnail = const Value.absent(),
@@ -1945,6 +2881,7 @@ class $$ArtworksTableTableManager
               }) => ArtworksCompanion.insert(
                 id: id,
                 title: title,
+                bookId: bookId,
                 status: status,
                 progress: progress,
                 thumbnail: thumbnail,
@@ -1962,14 +2899,49 @@ class $$ArtworksTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({cvCacheEntriesRefs = false, strokesRefs = false}) {
+              ({
+                bookId = false,
+                cvCacheEntriesRefs = false,
+                strokesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (cvCacheEntriesRefs) db.cvCacheEntries,
                     if (strokesRefs) db.strokes,
                   ],
-                  addJoins: null,
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (bookId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.bookId,
+                                    referencedTable: $$ArtworksTableReferences
+                                        ._bookIdTable(db),
+                                    referencedColumn: $$ArtworksTableReferences
+                                        ._bookIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (cvCacheEntriesRefs)
@@ -2034,7 +3006,11 @@ typedef $$ArtworksTableProcessedTableManager =
       $$ArtworksTableUpdateCompanionBuilder,
       (ArtworkRow, $$ArtworksTableReferences),
       ArtworkRow,
-      PrefetchHooks Function({bool cvCacheEntriesRefs, bool strokesRefs})
+      PrefetchHooks Function({
+        bool bookId,
+        bool cvCacheEntriesRefs,
+        bool strokesRefs,
+      })
     >;
 typedef $$CvCacheEntriesTableCreateCompanionBuilder =
     CvCacheEntriesCompanion Function({
@@ -2043,6 +3019,7 @@ typedef $$CvCacheEntriesTableCreateCompanionBuilder =
       required int height,
       required Uint8List labelMap,
       required Uint8List enhancedImage,
+      Value<Uint8List?> originalImage,
       required String regionsJson,
       Value<DateTime> createdAt,
     });
@@ -2053,6 +3030,7 @@ typedef $$CvCacheEntriesTableUpdateCompanionBuilder =
       Value<int> height,
       Value<Uint8List> labelMap,
       Value<Uint8List> enhancedImage,
+      Value<Uint8List?> originalImage,
       Value<String> regionsJson,
       Value<DateTime> createdAt,
     });
@@ -2109,6 +3087,11 @@ class $$CvCacheEntriesTableFilterComposer
 
   ColumnFilters<Uint8List> get enhancedImage => $composableBuilder(
     column: $table.enhancedImage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get originalImage => $composableBuilder(
+    column: $table.originalImage,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2175,6 +3158,11 @@ class $$CvCacheEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<Uint8List> get originalImage => $composableBuilder(
+    column: $table.originalImage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get regionsJson => $composableBuilder(
     column: $table.regionsJson,
     builder: (column) => ColumnOrderings(column),
@@ -2229,6 +3217,11 @@ class $$CvCacheEntriesTableAnnotationComposer
 
   GeneratedColumn<Uint8List> get enhancedImage => $composableBuilder(
     column: $table.enhancedImage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<Uint8List> get originalImage => $composableBuilder(
+    column: $table.originalImage,
     builder: (column) => column,
   );
 
@@ -2299,6 +3292,7 @@ class $$CvCacheEntriesTableTableManager
                 Value<int> height = const Value.absent(),
                 Value<Uint8List> labelMap = const Value.absent(),
                 Value<Uint8List> enhancedImage = const Value.absent(),
+                Value<Uint8List?> originalImage = const Value.absent(),
                 Value<String> regionsJson = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => CvCacheEntriesCompanion(
@@ -2307,6 +3301,7 @@ class $$CvCacheEntriesTableTableManager
                 height: height,
                 labelMap: labelMap,
                 enhancedImage: enhancedImage,
+                originalImage: originalImage,
                 regionsJson: regionsJson,
                 createdAt: createdAt,
               ),
@@ -2317,6 +3312,7 @@ class $$CvCacheEntriesTableTableManager
                 required int height,
                 required Uint8List labelMap,
                 required Uint8List enhancedImage,
+                Value<Uint8List?> originalImage = const Value.absent(),
                 required String regionsJson,
                 Value<DateTime> createdAt = const Value.absent(),
               }) => CvCacheEntriesCompanion.insert(
@@ -2325,6 +3321,7 @@ class $$CvCacheEntriesTableTableManager
                 height: height,
                 labelMap: labelMap,
                 enhancedImage: enhancedImage,
+                originalImage: originalImage,
                 regionsJson: regionsJson,
                 createdAt: createdAt,
               ),
@@ -2768,6 +3765,8 @@ typedef $$StrokesTableProcessedTableManager =
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
+  $$BooksTableTableManager get books =>
+      $$BooksTableTableManager(_db, _db.books);
   $$ArtworksTableTableManager get artworks =>
       $$ArtworksTableTableManager(_db, _db.artworks);
   $$CvCacheEntriesTableTableManager get cvCacheEntries =>

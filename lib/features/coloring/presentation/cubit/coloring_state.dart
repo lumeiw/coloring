@@ -29,6 +29,7 @@ class ColoringState extends Equatable {
     this.opacity = 1,
     this.activeRegionId = 0,
     this.clipToRegion = true,
+    this.showOriginal = false,
   });
 
   static const _defaultColor = Color(0xFFB9CDA6); // Sage из палитры
@@ -54,6 +55,9 @@ class ColoringState extends Equatable {
 
   /// true — красить только внутри контуров; false — где угодно на рисунке.
   final bool clipToRegion;
+
+  /// true — показывать оригинал (без обработок и мазков); рисование выключено.
+  final bool showOriginal;
 
   bool get canUndo => strokes.isNotEmpty;
   bool get canRedo => redoStack.isNotEmpty;
@@ -81,6 +85,7 @@ class ColoringState extends Equatable {
     double? opacity,
     int? activeRegionId,
     bool? clipToRegion,
+    bool? showOriginal,
   }) {
     return ColoringState(
       loading: loading ?? this.loading,
@@ -93,6 +98,7 @@ class ColoringState extends Equatable {
       opacity: opacity ?? this.opacity,
       activeRegionId: activeRegionId ?? this.activeRegionId,
       clipToRegion: clipToRegion ?? this.clipToRegion,
+      showOriginal: showOriginal ?? this.showOriginal,
     );
   }
 
@@ -108,5 +114,6 @@ class ColoringState extends Equatable {
     opacity,
     activeRegionId,
     clipToRegion,
+    showOriginal,
   ];
 }

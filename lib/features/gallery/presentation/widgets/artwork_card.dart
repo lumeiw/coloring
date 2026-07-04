@@ -5,10 +5,18 @@ import '../../../../core/theme/app_colors.dart';
 
 /// Карточка работы в галерее: превью, название и полоса прогресса.
 class ArtworkCard extends StatelessWidget {
-  const ArtworkCard({super.key, required this.artwork, this.onTap});
+  const ArtworkCard({
+    super.key,
+    required this.artwork,
+    this.onTap,
+    this.onLongPress,
+  });
 
   final Artwork artwork;
   final VoidCallback? onTap;
+
+  /// Длинное нажатие — меню действий (переименовать/удалить).
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +26,7 @@ class ArtworkCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -76,7 +85,8 @@ class _Preview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      // Скругление карточек — 16 из шкалы дизайн-системы (12/16/28).
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerHigh,

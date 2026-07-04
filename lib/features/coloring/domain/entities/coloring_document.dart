@@ -4,10 +4,7 @@ import 'dart:ui';
 import 'region.dart';
 
 /// Готовый к раскрашиванию документ: улучшенный line-art (display-версия),
-/// карта регионов (label-map) и список областей.
-///
-/// Это чистая доменная модель — она одинакова и для мок-источника (этап 2),
-/// и для реального CV-пайплайна (этап 3). Движок раскрашивания работает
+/// карта регионов (label-map) и список областей. Движок раскрашивания работает
 /// только с ней и ничего не знает про происхождение данных.
 class ColoringDocument {
   ColoringDocument({
@@ -16,6 +13,7 @@ class ColoringDocument {
     required this.height,
     required this.labelMap,
     required this.regions,
+    this.originalPng,
   }) : assert(
          labelMap.length == width * height,
          'label-map должен иметь размер width*height',
@@ -23,6 +21,10 @@ class ColoringDocument {
 
   /// Фоновое изображение с контурами и номерами (то, что видит пользователь).
   final Image lineArt;
+
+  /// Оригинал страницы (PNG без обработок, тот же размер) — для режима
+  /// «показать оригинал». null у работ, импортированных до появления фичи.
+  final Uint8List? originalPng;
 
   final int width;
   final int height;

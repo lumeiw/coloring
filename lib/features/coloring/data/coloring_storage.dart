@@ -23,6 +23,7 @@ class ColoringStorage {
     required String title,
     String? sourcePdfPath,
     int pageIndex = 0,
+    int? bookId,
   }) {
     return _db
         .into(_db.artworks)
@@ -31,6 +32,7 @@ class ColoringStorage {
             title: title,
             sourcePdfPath: Value(sourcePdfPath),
             pageIndex: Value(pageIndex),
+            bookId: Value(bookId),
           ),
         );
   }
@@ -39,6 +41,20 @@ class ColoringStorage {
     return (_db.select(_db.artworks)
           ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
         .watch();
+  }
+
+  /// Страницы книги в порядке следования в PDF.
+  Stream<List<ArtworkRow>> watchBookArtworks(int bookId) {
+    return (_db.select(_db.artworks)
+          ..where((t) => t.bookId.equals(bookId))
+          ..orderBy([(t) => OrderingTerm.asc(t.pageIndex)]))
+        .watch();
+  }
+
+  Future<void> renameArtwork(int id, String title) {
+    return (_db.update(_db.artworks)..where((t) => t.id.equals(id))).write(
+      ArtworksCompanion(title: Value(title), updatedAt: Value(DateTime.now())),
+    );
   }
 
   Future<ArtworkRow?> artworkById(int id) {
@@ -69,8 +85,63 @@ class ColoringStorage {
         );
   }
 
+  /// Удаляет работу вместе с CV-кешем и мазками (не полагаемся на PRAGMA
+  /// foreign_keys — чистим явно, так надёжнее для старых установок).
   Future<void> deleteArtwork(int id) {
-    return (_db.delete(_db.artworks)..where((t) => t.id.equals(id))).go();
+    return _db.transaction(() async {
+      await (_db.delete(_db.strokes)..where((t) => t.artworkId.equals(id))).go();
+      await (_db.delete(_db.cvCacheEntries)
+            ..where((t) => t.artworkId.equals(id)))
+          .go();
+      await (_db.delete(_db.artworks)..where((t) => t.id.equals(id))).go();
+    });
+  }
+
+  // ————— Книги —————
+  Future<int> createBook({
+    required String title,
+    String? sourcePdfPath,
+    Uint8List? cover,
+  }) {
+    return _db
+        .into(_db.books)
+        .insert(
+          BooksCompanion.insert(
+            title: title,
+            sourcePdfPath: Value(sourcePdfPath),
+            cover: Value(cover),
+          ),
+        );
+  }
+
+  Stream<List<BookRow>> watchBooks() {
+    return (_db.select(_db.books)
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+        .watch();
+  }
+
+  Future<BookRow?> bookById(int id) {
+    return (_db.select(_db.books)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+  }
+
+  Future<void> renameBook(int id, String title) {
+    return (_db.update(_db.books)..where((t) => t.id.equals(id))).write(
+      BooksCompanion(title: Value(title), updatedAt: Value(DateTime.now())),
+    );
+  }
+
+  /// Удаляет книгу со всеми страницами (и их кешем/мазками).
+  Future<void> deleteBook(int id) {
+    return _db.transaction(() async {
+      final pages = await (_db.select(_db.artworks)
+            ..where((t) => t.bookId.equals(id)))
+          .get();
+      for (final page in pages) {
+        await deleteArtwork(page.id);
+      }
+      await (_db.delete(_db.books)..where((t) => t.id.equals(id))).go();
+    });
   }
 
   // ————— CV-кеш —————
@@ -84,6 +155,7 @@ class ColoringStorage {
             height: result.height,
             labelMap: _int32ToBytes(result.labelMap),
             enhancedImage: result.enhancedPng,
+            originalImage: Value(result.originalPng),
             regionsJson: _encodeRegions(result.regions),
           ),
         );

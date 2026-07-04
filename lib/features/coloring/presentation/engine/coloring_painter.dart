@@ -41,10 +41,15 @@ class ColoringPainter extends CustomPainter {
     required this.clipLive,
     required this.highlightMask,
     required this.highlightColor,
+    this.original,
   }) : super(repaint: live);
 
   final ui.Image baked;
   final Size imageSize;
+
+  /// Если задан — рисуется ТОЛЬКО оригинал (режим «показать оригинал»):
+  /// без мазков, подсветки и живого мазка, с той же трансформацией холста.
+  final ui.Image? original;
 
   /// Текущий мазок (обновляется во время движения пальца).
   final ValueListenable<BrushStroke?> live;
@@ -70,6 +75,20 @@ class ColoringPainter extends CustomPainter {
     // Ограничиваем всё рисование границами картинки, чтобы подсветка (drawColor)
     // и мазки не заливали поля-леттербокс вокруг изображения.
     canvas.clipRect(Offset.zero & imageSize);
+
+    // Режим «показать оригинал»: только исходная картинка, без всего.
+    final orig = original;
+    if (orig != null) {
+      // Оригинал хранится в том же размере, что display, но подстрахуемся.
+      canvas.drawImageRect(
+        orig,
+        Rect.fromLTWH(0, 0, orig.width.toDouble(), orig.height.toDouble()),
+        Offset.zero & imageSize,
+        _imagePaint,
+      );
+      canvas.restore();
+      return;
+    }
 
     // 1) Запечённый фон со всеми мазками.
     canvas.drawImage(baked, Offset.zero, _imagePaint);
@@ -108,6 +127,7 @@ class ColoringPainter extends CustomPainter {
         old.clipLive != clipLive ||
         old.highlightMask != highlightMask ||
         old.highlightColor != highlightColor ||
+        old.original != original ||
         old.imageSize != imageSize;
   }
 }

@@ -60,9 +60,10 @@ abstract final class AppTheme {
           minimumSize: const Size.fromHeight(56),
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
+          // labelLarge из дизайн-системы: 15 / 800; высота Filled — 56.
           textStyle: const TextStyle(
             fontFamily: _fontFamily,
-            fontSize: 17,
+            fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
           shape: RoundedRectangleBorder(

@@ -1,11 +1,35 @@
 import 'package:drift/drift.dart';
 
+/// Книга — многостраничный импорт PDF. Страницы книги лежат в [Artworks]
+/// со ссылкой bookId; одиночные работы книги не имеют (bookId == null).
+@DataClassName('BookRow')
+class Books extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  TextColumn get title => text().withLength(min: 1, max: 120)();
+
+  /// Путь к исходному PDF книги.
+  TextColumn get sourcePdfPath => text().nullable()();
+
+  /// PNG-обложка (первая выбранная страница; она НЕ обрабатывается CV и
+  /// не входит в страницы книги — только превью для карточки галереи).
+  BlobColumn get cover => blob().nullable()();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 /// Работы пользователя (то, что показывается в галерее).
 @DataClassName('ArtworkRow')
 class Artworks extends Table {
   IntColumn get id => integer().autoIncrement()();
 
   TextColumn get title => text().withLength(min: 1, max: 120)();
+
+  /// Книга, к которой относится страница (null — одиночная работа).
+  IntColumn get bookId =>
+      integer().nullable().references(Books, #id, onDelete: KeyAction.cascade)();
 
   /// Индекс значения enum ArtworkStatus (new / inProgress / done).
   IntColumn get status => integer().withDefault(const Constant(0))();
@@ -41,6 +65,10 @@ class CvCacheEntries extends Table {
 
   /// Улучшенный line-art (display-версия) в виде PNG.
   BlobColumn get enhancedImage => blob()();
+
+  /// Оригинал страницы (PNG без обработок, тот же размер, что display) —
+  /// для режима «показать оригинал» на экране рисования.
+  BlobColumn get originalImage => blob().nullable()();
 
   /// JSON-список регионов (id, площадь, bbox, центроид номера).
   TextColumn get regionsJson => text()();

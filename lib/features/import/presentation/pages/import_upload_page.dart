@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_dialogs.dart';
 import '../../domain/pdf_source.dart';
 
-/// 1a — Загрузка PDF: выбор файла с устройства (или встроенный образец).
+/// Загрузка: выбор PDF, фото или встроенного образца.
 class ImportUploadPage extends StatelessWidget {
   const ImportUploadPage({super.key});
 
@@ -27,10 +28,25 @@ class ImportUploadPage extends StatelessWidget {
     final result = await FilePicker.pickFiles(type: FileType.image);
     final file = result?.files.singleOrNull;
     if (file?.path == null || !context.mounted) return;
-    // У изображения одна «страница» — сразу на обработку.
+    // У изображения одна «страница»: спрашиваем название и сразу на обработку.
+    final defaultTitle = file!.name.replaceAll(
+      RegExp(r'\.(png|jpe?g|heic|webp)$', caseSensitive: false),
+      '',
+    );
+    final title = await showTitleInputDialog(
+      context,
+      title: 'Название работы',
+      initial: defaultTitle,
+      confirmLabel: 'Продолжить',
+    );
+    if (title == null || !context.mounted) return;
     context.push(
       AppRoutes.importProcessing,
-      extra: (ImageFileSource(file!.path!, name: file.name), 0),
+      extra: (
+        ImageFileSource(file.path!, name: file.name),
+        const [0],
+        title,
+      ),
     );
   }
 
@@ -73,11 +89,12 @@ class ImportUploadPage extends StatelessWidget {
                     icon: const Icon(Icons.photo_library_outlined, size: 22),
                     label: const Text('Из фото'),
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
+                      // Высота и радиус кнопок — как у Filled (56 / 28).
+                      minimumSize: const Size.fromHeight(56),
                       foregroundColor: AppColors.primary,
                       side: const BorderSide(color: AppColors.outline),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(26),
+                        borderRadius: BorderRadius.circular(28),
                       ),
                       textStyle: const TextStyle(
                         fontSize: 16,
@@ -131,11 +148,15 @@ class DottedZone extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: AppColors.surfaceContainer,
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(color: const Color(0xFFC3CCDA), width: 2),
         ),
         child: Center(
-          child: Column(
+          // FittedBox: на низких экранах (клавиатура/маленький телефон)
+          // содержимое ужимается вместо RenderFlex overflow.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
@@ -162,14 +183,16 @@ class DottedZone extends StatelessWidget {
                 child: Text(
                   'Выберите PDF на устройстве',
                   textAlign: TextAlign.center,
+                  // bodyLarge: 16 / 400.
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     height: 1.45,
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),

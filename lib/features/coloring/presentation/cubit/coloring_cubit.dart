@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -21,6 +22,10 @@ class ColoringCubit extends Cubit<ColoringState> {
 
   int _artworkId = 0;
 
+  /// Дебаунс записи лога: замыкаем частые мазки в одну запись вместо O(N²)
+  /// перезаписей на каждый штрих.
+  Timer? _persistTimer;
+
   Future<void> load(int artworkId) async {
     _artworkId = artworkId;
     emit(state.copyWith(loading: true));
@@ -43,6 +48,10 @@ class ColoringCubit extends Cubit<ColoringState> {
   /// Переключить режим: только внутри контуров ↔ рисовать где угодно.
   void toggleClip() =>
       emit(state.copyWith(clipToRegion: !state.clipToRegion));
+
+  /// Переключить показ оригинала (без обработок и мазков).
+  void toggleOriginal() =>
+      emit(state.copyWith(showOriginal: !state.showOriginal));
 
   void setBrushSize(double size) => emit(state.copyWith(brushSize: size));
 
@@ -79,8 +88,18 @@ class ColoringCubit extends Cubit<ColoringState> {
     _persist();
   }
 
-  /// Сохраняет актуальный лог мазков и прогресс в хранилище (fire-and-forget).
+  /// Планирует сохранение лога и прогресса (дебаунс). Реальная запись — в
+  /// [_flushPersist] после паузы в рисовании либо при закрытии экрана.
   void _persist() {
+    if (_artworkId == 0) return;
+    _persistTimer?.cancel();
+    _persistTimer = Timer(const Duration(milliseconds: 400), _flushPersist);
+  }
+
+  /// Немедленно пишет актуальный лог мазков и прогресс (fire-and-forget).
+  void _flushPersist() {
+    _persistTimer?.cancel();
+    _persistTimer = null;
     final id = _artworkId;
     if (id == 0) return;
     _storage.replaceStrokes(id, state.strokes);
@@ -95,5 +114,11 @@ class ColoringCubit extends Cubit<ColoringState> {
       progress: state.progress,
       thumbnail: png,
     );
+  }
+
+  @override
+  Future<void> close() {
+    _flushPersist(); // не теряем последние мазки при выходе с экрана
+    return super.close();
   }
 }

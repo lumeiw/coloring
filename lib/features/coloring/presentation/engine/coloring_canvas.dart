@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/brush_stroke.dart';
 import '../../domain/entities/coloring_document.dart';
 import '../cubit/coloring_cubit.dart';
@@ -56,6 +58,15 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
   /// Один раз запекаем сохранённый прогресс при открытии.
   bool _didInitialBake = false;
 
+  /// Оригинал страницы (без обработок) — декодируется лениво при первом
+  /// включении режима «показать оригинал».
+  ui.Image? _original;
+  bool _decodingOriginal = false;
+
+  /// Троттлинг превью: PNG-снапшот дорогой, поэтому кодируем не каждый мазок,
+  /// а последнее состояние холста после паузы в рисовании.
+  Timer? _thumbTimer;
+
   static const double _minScale = 1;
   static const double _maxScale = 12;
 
@@ -92,11 +103,28 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
         await _maskCache.maskFor(stroke.regionId);
   }
 
+  /// Ленивая декодировка оригинала (PNG из документа) для режима просмотра.
+  Future<void> _ensureOriginal() async {
+    if (_original != null || _decodingOriginal) return;
+    final png = widget.document.originalPng;
+    if (png == null) return;
+    _decodingOriginal = true;
+    final codec = await ui.instantiateImageCodec(png);
+    final frame = await codec.getNextFrame();
+    if (!mounted) {
+      frame.image.dispose();
+      return;
+    }
+    setState(() => _original = frame.image);
+  }
+
   @override
   void dispose() {
     widget.resetSignal?.removeListener(_resetView);
+    _thumbTimer?.cancel();
     final baked = _baked;
     if (baked != null && baked != widget.document.lineArt) baked.dispose();
+    _original?.dispose();
     _maskCache.dispose();
     _live.dispose();
     _zoom.dispose();
@@ -137,7 +165,7 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
       _bakedCount += 1;
     });
     if (old != null && old != widget.document.lineArt) old.dispose();
-    _saveThumbnail(image);
+    _scheduleThumbnail();
   }
 
   Future<void> _rebakeAll(List<BrushStroke> strokes) async {
@@ -161,7 +189,17 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
       _bakedCount = strokes.length;
     });
     if (old != null && old != widget.document.lineArt) old.dispose();
-    _saveThumbnail(image);
+    _scheduleThumbnail();
+  }
+
+  /// Планирует сохранение превью после паузы (троттлинг): при частых мазках
+  /// кодируется только последнее состояние холста, а не каждый штрих.
+  void _scheduleThumbnail() {
+    if (_thumbTimer?.isActive ?? false) return;
+    _thumbTimer = Timer(const Duration(milliseconds: 1200), () {
+      final img = _baked;
+      if (img != null && mounted) _saveThumbnail(img);
+    });
   }
 
   /// Кодирует уменьшенный снапшот холста в PNG и отдаёт его в cubit как превью.
@@ -192,10 +230,13 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
     final state = _cubit.state;
     final imgPoint = _fit.toImage(e.localPosition);
 
+    // Пипетка работает и в режиме «оригинал» — берёт цвет с исходника.
     if (state.tool == ColoringTool.eyedropper) {
       _pickColorAt(imgPoint);
       return;
     }
+    // В режиме «оригинал» рисование выключено (доступны «рука» и пипетка).
+    if (state.showOriginal) return;
     if (state.tool != ColoringTool.brush) return;
 
     if (!state.clipToRegion) {
@@ -262,12 +303,15 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
   }
 
   Future<void> _pickColorAt(ui.Offset imgPoint) async {
-    final src = _baked ?? widget.document.lineArt;
+    // В режиме «оригинал» цвет берём с исходной картинки (если она уже
+    // декодирована), иначе — с запечённого слоя раскраски.
+    final original = _cubit.state.showOriginal ? _original : null;
+    final src = original ?? _baked ?? widget.document.lineArt;
     final data = await src.toByteData();
     if (data == null) return;
-    final x = imgPoint.dx.floor().clamp(0, widget.document.width - 1);
-    final y = imgPoint.dy.floor().clamp(0, widget.document.height - 1);
-    final o = (y * widget.document.width + x) * 4;
+    final x = imgPoint.dx.floor().clamp(0, src.width - 1);
+    final y = imgPoint.dy.floor().clamp(0, src.height - 1);
+    final o = (y * src.width + x) * 4;
     final color = ui.Color.fromARGB(
       255,
       data.getUint8(o),
@@ -326,8 +370,11 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
           a.brushSize != b.brushSize ||
           a.opacity != b.opacity ||
           a.activeRegionId != b.activeRegionId ||
-          a.clipToRegion != b.clipToRegion,
+          a.clipToRegion != b.clipToRegion ||
+          a.showOriginal != b.showOriginal,
       builder: (context, state) {
+        // Первое включение «оригинала» — декодируем PNG в фоне.
+        if (state.showOriginal && _original == null) _ensureOriginal();
         // Запекаем восстановленный из drift прогресс один раз при открытии.
         if (!_didInitialBake) {
           _didInitialBake = true;
@@ -365,6 +412,8 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
                       clipLive: state.clipToRegion,
                       highlightMask: highlightMask,
                       highlightColor: state.color,
+                      // Пока PNG декодируется, показываем раскраску.
+                      original: state.showOriginal ? _original : null,
                     ),
                   ),
                 ),
@@ -377,7 +426,9 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
                   // ClipRect не даёт трансформированному («рукой») холсту
                   // наезжать на верхнюю/нижнюю панели.
                   child: ClipRect(
-                    child: state.tool == ColoringTool.hand
+                    // В режиме «оригинал» жесты трансформации доступны всегда.
+                    child:
+                        state.tool == ColoringTool.hand || state.showOriginal
                         ? GestureDetector(
                             onScaleStart: _onScaleStart,
                             onScaleUpdate: _onScaleUpdate,
@@ -387,11 +438,51 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
                   ),
                 ),
                 _zoomChip(),
+                if (widget.document.originalPng != null)
+                  _originalToggle(state.showOriginal),
               ],
             );
           },
         );
       },
+    );
+  }
+
+  /// Переключатель «показать оригинал» — правый верхний угол, на уровне зума.
+  Widget _originalToggle(bool active) {
+    return Positioned(
+      top: 14,
+      right: 16,
+      child: GestureDetector(
+        onTap: () => _cubit.toggleOriginal(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: BoxDecoration(
+            color: active
+                ? AppColors.primary
+                : Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                active ? Icons.image : Icons.image_outlined,
+                size: 16,
+                color: active ? Colors.white : const Color(0xFF5C6672),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Оригинал',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: active ? Colors.white : const Color(0xFF5C6672),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -406,7 +497,7 @@ class _ColoringCanvasState extends State<ColoringCanvas> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [

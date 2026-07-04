@@ -25,34 +25,61 @@ class ImportRepositoryImpl implements ImportRepository {
       _rasterizer.thumbnail(source, pageIndex);
 
   @override
-  Future<int> importPage(ImportSource source, int pageIndex) async {
-    final page = await _rasterizer.rasterize(source, pageIndex);
-    final result = await _cv.process(page);
+  Future<int> importPages(
+    ImportSource source,
+    List<int> pageIndexes, {
+    required String title,
+    void Function(int done, int total)? onPage,
+  }) async {
+    assert(pageIndexes.isNotEmpty, 'нужна хотя бы одна страница');
+    final pages = [...pageIndexes]..sort();
+    final sourcePath = switch (source) {
+      PdfFileSource(:final path) => path,
+      ImageFileSource(:final path) => path,
+      PdfAssetSource() => null,
+    };
 
-    final artworkId = await _storage.createArtwork(
-      title: _titleFor(source, pageIndex),
-      sourcePdfPath: switch (source) {
-        PdfFileSource(:final path) => path,
-        ImageFileSource(:final path) => path,
-        PdfAssetSource() => null,
-      },
-      pageIndex: pageIndex,
-    );
-    await _storage.saveCvCache(artworkId, result);
-    // Сразу кладём line-art как превью, чтобы новая работа не была пустой.
-    await _storage.updateProgress(
-      artworkId,
-      progress: 0,
-      thumbnail: result.enhancedPng,
-    );
-    return artworkId;
-  }
+    // Несколько страниц — книга. Первая выбранная страница — только обложка:
+    // не обрабатывается CV и не становится страницей книги.
+    final isBook = pages.length > 1;
+    int? bookId;
+    if (isBook) {
+      final coverIndex = pages.removeAt(0);
+      final cover = await _rasterizer.thumbnail(
+        source,
+        coverIndex,
+        width: 720,
+      );
+      bookId = await _storage.createBook(
+        title: title,
+        sourcePdfPath: sourcePath,
+        cover: cover,
+      );
+    }
 
-  String _titleFor(ImportSource source, int pageIndex) {
-    final base = source.displayName.replaceAll(
-      RegExp(r'\.(pdf|png|jpe?g|heic|webp)$', caseSensitive: false),
-      '',
-    );
-    return pageIndex == 0 ? base : '$base · стр. ${pageIndex + 1}';
+    int? firstId;
+    for (var i = 0; i < pages.length; i++) {
+      onPage?.call(i, pages.length);
+      final pageIndex = pages[i];
+      final page = await _rasterizer.rasterize(source, pageIndex);
+      final result = await _cv.process(page);
+
+      final artworkId = await _storage.createArtwork(
+        title: isBook ? 'Стр. ${pageIndex + 1}' : title,
+        sourcePdfPath: sourcePath,
+        pageIndex: pageIndex,
+        bookId: bookId,
+      );
+      await _storage.saveCvCache(artworkId, result);
+      // Сразу кладём line-art как превью, чтобы работа не была пустой.
+      await _storage.updateProgress(
+        artworkId,
+        progress: 0,
+        thumbnail: result.enhancedPng,
+      );
+      firstId ??= artworkId;
+    }
+    onPage?.call(pages.length, pages.length);
+    return firstId!;
   }
 }

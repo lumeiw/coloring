@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/coloring/presentation/pages/coloring_page.dart';
+import '../../features/gallery/presentation/pages/book_page.dart';
 import '../../features/gallery/presentation/pages/gallery_page.dart';
 import '../../features/import/domain/pdf_source.dart';
 import '../../features/import/presentation/pages/import_processing_page.dart';
@@ -35,12 +36,21 @@ abstract final class AppRouter {
         path: AppRoutes.importProcessing,
         name: AppRoutes.importProcessingName,
         builder: (context, state) {
-          final args = state.extra as (ImportSource, int)?;
+          final args = state.extra as (ImportSource, List<int>, String)?;
           return ImportProcessingPage(
             source: args?.$1 ??
                 const PdfAssetSource('assets/sample/coloring_sample.pdf'),
-            pageIndex: args?.$2 ?? 0,
+            pageIndexes: args?.$2 ?? const [0],
+            title: args?.$3 ?? 'Образец',
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.book,
+        name: AppRoutes.bookName,
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+          return BookPage(bookId: id);
         },
       ),
       GoRoute(

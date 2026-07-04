@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Локальные заметки (не для репозитория)
+CLAUDE.md
+
+# Python-окружения для tools/ (сам код в tools/ коммитится, окружение — нет)
+.venv/
+.venv-cv/
+tools/**/.venv/
+__pycache__/

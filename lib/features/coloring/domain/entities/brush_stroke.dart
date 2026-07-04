@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 /// Один мазок кистью, привязанный к региону. Хранится в логе для undo/redo
-/// и последующего сохранения прогресса (этап 3).
+/// и восстановления прогресса.
 class BrushStroke {
   const BrushStroke({
     required this.regionId,

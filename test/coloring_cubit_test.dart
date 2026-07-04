@@ -114,8 +114,8 @@ void main() {
 
   test('лог мазков сохраняется и перечитывается из хранилища', () async {
     cubit.commitStroke(_stroke(1, const Color(0xFFB9CDA6)));
-    // Дать fire-and-forget записи завершиться.
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    // Запись дебаунсится (400 мс) — ждём дольше паузы плюс саму запись.
+    await Future<void>.delayed(const Duration(milliseconds: 550));
     final restored = await storage.loadStrokes(artworkId);
     expect(restored, hasLength(1));
     expect(restored.first.regionId, 1);
