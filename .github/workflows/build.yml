@@ -1,6 +1,7 @@
-name: Build unsigned IPA
+name: Build unsigned IPA + APK
 
-# Собирает НЕПОДПИСАННЫЙ IPA на macOS-раннере и выкладывает его артефактом.
+# Собирает НЕПОДПИСАННЫЙ IPA на macOS-раннере и APK на Ubuntu-раннере,
+# выкладывает оба артефактом и в один релиз.
 # Запускается по push в main и вручную (Run workflow).
 #
 # Чтобы собирать ПОДПИСАННЫЙ IPA: добавьте секреты с сертификатом (.p12) и
@@ -64,4 +65,56 @@ jobs:
             Неподписанный IPA (для сайдлоада — AltStore/Sideloadly).
             Коммит: ${{ github.sha }}
           files: build/ios/iphoneos/coloring-unsigned.ipa
+          fail_on_unmatched_files: true
+
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.4
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Code generation (drift / freezed / injectable)
+        run: dart run build_runner build
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/coloring-release.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coloring-release-apk
+          path: build/app/outputs/flutter-apk/coloring-release.apk
+          if-no-files-found: error
+
+      - name: Publish APK to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Неподписанный IPA (для сайдлоада — AltStore/Sideloadly) и APK под Android.
+            Коммит: ${{ github.sha }}
+          files: build/app/outputs/flutter-apk/coloring-release.apk
           fail_on_unmatched_files: true
